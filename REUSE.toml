@@ -4,6 +4,7 @@ version = 1
 path = [
   ".github/**",
   ".gitignore",
+  "CHANGELOG.md",
   "Cargo.lock",
   "Cargo.toml",
   "fonts/NOTICE.md",

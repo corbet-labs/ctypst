@@ -6,10 +6,12 @@ rust-version = "1.92"
 description = "Safe, deterministic, embedded Typst for Rust applications"
 license = "FSL-1.1-ALv2"
 repository = "https://github.com/corbet-labs/ctypst"
+homepage = "https://github.com/corbet-labs/ctypst"
+documentation = "https://docs.rs/ctypst"
 readme = "README.md"
 keywords = ["typst", "pdf", "rendering", "documents"]
 categories = ["template-engine", "rendering"]
-publish = false
+publish = ["crates-io"]
 
 [features]
 default = ["document-fonts", "format", "pdf", "raster"]
@@ -36,6 +38,9 @@ tempfile = "3.23"
 lto = "thin"
 codegen-units = 1
 strip = true
+
+[package.metadata.docs.rs]
+all-features = true
 
 [lints.rust]
 unsafe_code = "forbid"

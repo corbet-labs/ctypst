@@ -5,6 +5,14 @@ It embeds the compiler and selected fonts, renders deterministic PDFs, exposes
 Typst metadata queries and raster pages, and keeps product-specific document
 rules out of the engine.
 
+Add the latest compatible release from crates.io with only the capabilities
+your application needs:
+
+```toml
+[dependencies]
+ctypst = { version = "0.1.0", default-features = false, features = ["document-fonts", "pdf"] }
+```
+
 The default boundary is deliberately closed:
 
 - no Typst executable, system fonts, package downloads, shell, or network;

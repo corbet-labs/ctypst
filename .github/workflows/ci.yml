@@ -51,6 +51,9 @@ jobs:
       - name: Check license metadata
         uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
 
+      - name: Verify the crates.io package
+        run: cargo "+$RUST_TOOLCHAIN" publish --locked --dry-run
+
   portable:
     name: Test ${{ matrix.name }}
     strategy:
