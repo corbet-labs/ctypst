@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 //! Safe, deterministic, embedded Typst for Rust applications.
 
+mod config;
 mod engine;
 mod error;
 mod files;
@@ -15,9 +16,8 @@ mod query;
 #[cfg(feature = "raster")]
 mod raster;
 
-pub use engine::{
-    CompileOutput, CompileRequest, DiagnosticsPolicy, Engine, EngineBuilder, Limits, PageConstraint,
-};
+pub use config::{CompileOutput, CompileRequest, DiagnosticsPolicy, Limits, PageConstraint};
+pub use engine::{Engine, EngineBuilder};
 pub use error::{Error, Result};
 #[cfg(feature = "format")]
 pub use format::format_source;
