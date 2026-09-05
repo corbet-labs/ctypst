@@ -1,7 +1,8 @@
 // ctypst-measure-v1: the one product-neutral Typst measurement program.
 //
-// The request arrives as DATA at `/ctypst/request.json` (JSON in the runtime
-// VFS). This program owns escaping, supported markup, calibration probes,
+// The request arrives as DATA beside this program in the runtime VFS
+// (`request.json`, addressed relatively so no filesystem root is needed).
+// This program owns escaping, supported markup, calibration probes,
 // natural and wrapped measurement, and line derivation. Consumers MUST NOT
 // generate their own measurement program, reproduce calibration or line
 // derivation, or define a parallel cache-key contract.
@@ -19,7 +20,7 @@
 // Supported markup: `*strong*` and `_emphasis_` stay live; every other
 // Typst-significant character (`\ [ ] # $ @ ` < ~`) is escaped and renders
 // literally. An observable behavior change creates `ctypst-measure-v2`;
-#let req = json("/ctypst/request.json")
+#let req = json("request.json")
 #assert(req.version == "ctypst-measure-v1", message: "unsupported measure request version")
 
 #let fmt = req.format
