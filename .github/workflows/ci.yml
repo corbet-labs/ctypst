@@ -109,6 +109,10 @@ jobs:
           crate="$(grep -m1 '^version' ../../../Cargo.toml | sed 's/.*"\(.*\)"/\1/')"
           test "$js" = "$crate" || { echo "js $js tracks no crate release ($crate)"; exit 1; }
 
+      - name: Sync generated adapter assets
+        working-directory: js/@corbet-labs/ctypst
+        run: bash ./scripts/sync-assets.sh
+
       - name: Type-check the adapter
         working-directory: js/@corbet-labs/ctypst
         run: bun ./node_modules/typescript/bin/tsc --noEmit -p ./tsconfig.json
