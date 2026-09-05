@@ -3,7 +3,7 @@
 All notable changes to `ctypst` are documented here. The project follows
 Semantic Versioning.
 
-## Unreleased
+## 0.2.0 - 2026-09-05
 
 - Add the versioned measurement protocol (`ctypst-measure-v1`): one shared
   Typst measurement program with structured JSON input, frozen
