@@ -12,8 +12,11 @@ when this file and a consumer fixture disagree, this file wins.
   items (escaping torture, `*`/`_` markup, Unicode/emoji, empty text,
   multi-line wraps, serif + us-letter variants).
 - `expected.json` — canonical outputs (per-item `w`/`h`/`lines` plus the
-  calibration record), frozen from the native Typst engine. Exact match:
-  no numeric tolerance on the native side.
+  calibration record), frozen from the native Typst engine. Native
+  determinism envelope: ids, counts, and line numbers match bitwise;
+  floats match within one ulp (a few values sit exactly on IEEE rounding
+  boundaries and wobble by one ulp across hosts and builds — fourteen
+  orders of magnitude below any product threshold).
 - `README.md` — this file.
 
 ## Invariants

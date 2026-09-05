@@ -45,7 +45,7 @@ fn manifest_covers_every_shipped_font() {
                 .to_string_lossy()
                 .into_owned()
         })
-        .filter(|name| name.ends_with(".ttf"))
+        .filter(|name| name.to_ascii_lowercase().ends_with(".ttf"))
         .collect();
     let in_manifest: HashSet<String> = manifest_entries()
         .into_iter()
