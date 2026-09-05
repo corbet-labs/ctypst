@@ -193,7 +193,7 @@ jobs:
       - name: Build WebAssembly artifacts
         shell: bash
         run: |
-          rustup target add wasm32-unknown-unknown
+          rustup target add --toolchain "$RUST_TOOLCHAIN" wasm32-unknown-unknown
           bindgen="$(cargo "+$RUST_TOOLCHAIN" metadata --locked --no-deps --format-version 1 \
             | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')"
           test -n "$bindgen"
