@@ -248,3 +248,20 @@ jobs:
           cd js/@corbet-labs/ctypst
           test "$(bun -p "require('./package.json').version")" = "${{ steps.release.outputs.version }}"
           gh release upload "$RELEASE_TAG" ./*.tgz --clobber
+
+      - name: Install pinned Node.js for npm provenance
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+
+      - name: Publish the JavaScript package
+        shell: bash
+        working-directory: js/@corbet-labs/ctypst
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Prefers trusted publishing (OIDC, no token): works once the
+          # package links this repo as a trusted publisher on npmjs.com.
+          # Falls back to NPM_TOKEN when the link is not in place yet.
+          npm publish --access public --provenance
