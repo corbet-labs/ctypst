@@ -14,7 +14,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./assets/measure-v1.typ": "./assets/measure-v1.typ",
-    "./fonts/*": "./fonts/*"
+    "./fonts/*": "./fonts/*",
+    "./wasm/*": "./wasm/*"
   },
   "files": [
     "src/**/*",

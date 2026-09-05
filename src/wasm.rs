@@ -85,13 +85,26 @@ impl Ctypst {
     }
 
     /// Pin a virtual text source visible to every later compilation.
+    ///
+    /// Replaces any overlay already pinned at the same path, so repeated
+    /// asset uploads stay bounded.
     pub fn add_source(&mut self, path: String, content: String) {
-        self.overlays.push((path, Overlay::Source(content)));
+        self.replace_overlay(path, Overlay::Source(content));
     }
 
     /// Pin a virtual binary asset visible to every later compilation.
+    ///
+    /// Replaces any overlay already pinned at the same path.
     pub fn add_binary(&mut self, path: String, content: Vec<u8>) {
-        self.overlays.push((path, Overlay::Binary(content)));
+        self.replace_overlay(path, Overlay::Binary(content));
+    }
+
+    fn replace_overlay(&mut self, path: String, overlay: Overlay) {
+        if let Some(slot) = self.overlays.iter_mut().find(|(pinned, _)| *pinned == path) {
+            slot.1 = overlay;
+        } else {
+            self.overlays.push((path, overlay));
+        }
     }
 
     /// Measure a JSON array of items with a JSON format object.
@@ -160,10 +173,43 @@ impl CompiledDoc {
             .map_err(|fault| error(format!("SVG export failed: {fault}")))
     }
 
+    /// Render all pages into one merged SVG document with `gap_pt` between pages.
+    pub fn svg_merged(&self, gap_pt: f64) -> Result<String, JsValue> {
+        if !gap_pt.is_finite() || gap_pt < 0.0 {
+            return Err(error("SVG gap must be finite and non-negative"));
+        }
+        Ok(typst_svg::svg_merged(
+            &self.document,
+            &typst_svg::SvgOptions {
+                render_bleed: false,
+                pretty: false,
+            },
+            typst::layout::Abs::pt(gap_pt),
+        ))
+    }
+
     /// Export a deterministic PDF (epoch 0).
     pub fn pdf(&self) -> Result<Vec<u8>, JsValue> {
         self.engine
             .pdf(&self.document, 0)
             .map_err(|fault| error(format!("PDF export failed: {fault}")))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Ctypst;
+
+    #[test]
+    fn repeated_overlays_replace_instead_of_accumulating() {
+        let mut runtime = Ctypst::open().expect("runtime opens on embedded fonts");
+        runtime.add_source("/x.typ".to_owned(), "Version one".to_owned());
+        runtime.add_source("/x.typ".to_owned(), "Version two".to_owned());
+        runtime.add_binary("/x.bin".to_owned(), vec![1, 2, 3]);
+        runtime.add_binary("/x.bin".to_owned(), vec![4, 5]);
+        let document = runtime
+            .compile("#include \"/x.typ\"", "{}")
+            .expect("overlay include compiles");
+        assert_eq!(document.page_count(), 1);
     }
 }
