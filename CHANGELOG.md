@@ -3,7 +3,7 @@
 All notable changes to `ctypst` are documented here. The project follows
 Semantic Versioning.
 
-## Unreleased
+## 0.3.0 - 2026-09-05
 
 - Add per-page SVG export behind the `svg` Cargo feature.
 - Add the `wasm` Cargo feature: the whole runtime (engine, measurement,
