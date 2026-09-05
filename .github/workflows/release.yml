@@ -193,12 +193,14 @@ jobs:
       - name: Build WebAssembly artifacts
         shell: bash
         run: |
-          for attempt in 1 2 3; do
-            rustup target add --toolchain "$RUST_TOOLCHAIN" wasm32-unknown-unknown && break
-            echo "wasm target install attempt $attempt failed; retrying" >&2
-            sleep 15
+          rustup show
+          for toolchain in $(rustup toolchain list | awk '{print $1}'); do
+            echo "toolchain $toolchain targets: $(rustup target list --toolchain "$toolchain" --installed | tr '\n' ' ')"
           done
-          rustup target list --toolchain "$RUST_TOOLCHAIN" --installed | grep -q wasm32-unknown-unknown
+          echo "--- egress probe ---"
+          curl --silent --show-error --output /dev/null --write-out 'static.rust-lang.org: %{http_code} in %{time_total}s\n' --max-time 20 \
+            https://static.rust-lang.org/dist/channel-rust-1.92.0.toml || true
+          df -h "$RUNNER_TEMP" | tail -n 1
           bindgen="$(cargo "+$RUST_TOOLCHAIN" metadata --locked --no-deps --format-version 1 \
             | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')"
           test -n "$bindgen"
