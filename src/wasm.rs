@@ -4,8 +4,12 @@
 //! the versioned measurement client, and the exporters over JSON values so
 //! JavaScript callers cross exactly one boundary type. Fonts ship embedded;
 //! callers configure nothing.
+//!
+//! [`CompiledDoc`] compiles once and renders many times: callers rendering
+//! several pages of one document pay exactly one compilation.
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use wasm_bindgen::prelude::*;
 
@@ -36,8 +40,14 @@ fn parse_map(raw: &str) -> Result<BTreeMap<String, String>, JsValue> {
 /// One `ctypst` runtime: embedded fonts, measurement, compilation, export.
 #[wasm_bindgen]
 pub struct Ctypst {
-    engine: Engine,
+    engine: Arc<Engine>,
+    overlays: Vec<(String, Overlay)>,
     measure: MeasureClient,
+}
+
+enum Overlay {
+    Source(String),
+    Binary(Vec<u8>),
 }
 
 #[wasm_bindgen]
@@ -49,16 +59,22 @@ impl Ctypst {
     /// JavaScript sees a string error when no embedded font parses.
     #[wasm_bindgen(constructor)]
     pub fn open() -> Result<Ctypst, JsValue> {
-        let engine = Engine::builder()
-            .fonts(crate::fonts::documents())
-            .build()
-            .map_err(|fault| error(format!("cannot open ctypst: {fault}")))?;
+        let engine = Arc::new(
+            Engine::builder()
+                .fonts(crate::fonts::documents())
+                .build()
+                .map_err(|fault| error(format!("cannot open ctypst: {fault}")))?,
+        );
         let measure = MeasureClient::new(crate::fonts::documents())
             .map_err(|fault| error(format!("cannot open measurement: {fault}")))?;
-        Ok(Self { engine, measure })
+        Ok(Self {
+            engine,
+            overlays: Vec::new(),
+            measure,
+        })
     }
 
-    /// Crate, engine, and protocol versions for cache keys and diagnostics.
+    /// Crate and protocol versions for cache keys and diagnostics.
     #[must_use]
     pub fn versions() -> String {
         serde_json::json!({
@@ -66,6 +82,16 @@ impl Ctypst {
             "protocol": crate::measure::PROTOCOL_VERSION,
         })
         .to_string()
+    }
+
+    /// Pin a virtual text source visible to every later compilation.
+    pub fn add_source(&mut self, path: String, content: String) {
+        self.overlays.push((path, Overlay::Source(content)));
+    }
+
+    /// Pin a virtual binary asset visible to every later compilation.
+    pub fn add_binary(&mut self, path: String, content: Vec<u8>) {
+        self.overlays.push((path, Overlay::Binary(content)));
     }
 
     /// Measure a JSON array of items with a JSON format object.
@@ -88,41 +114,56 @@ impl Ctypst {
         .map_err(|fault| error(format!("cannot encode results: {fault}")))
     }
 
-    /// Compile a source string and return the page count.
-    pub fn page_count(&self, source: &str, inputs_json: &str) -> Result<usize, JsValue> {
-        Ok(self.compile(source, inputs_json)?.pages().len())
+    /// Compile a source string with JSON inputs into a reusable document.
+    pub fn compile(&self, source: &str, inputs_json: &str) -> Result<CompiledDoc, JsValue> {
+        let inputs = parse_map(inputs_json)?;
+        let mut request =
+            CompileRequest::new("main.typ".to_owned()).source_file("main.typ", source.to_owned());
+        for (path, overlay) in &self.overlays {
+            request = match overlay {
+                Overlay::Source(content) => request.source_file(path.clone(), content.clone()),
+                Overlay::Binary(bytes) => request.binary_file(path.clone(), bytes.clone()),
+            };
+        }
+        request = request.inputs(inputs);
+        let document = self
+            .engine
+            .compile(request)
+            .map(|output| output.document)
+            .map_err(|fault| error(format!("compilation failed: {fault}")))?;
+        Ok(CompiledDoc {
+            engine: Arc::clone(&self.engine),
+            document,
+        })
+    }
+}
+
+/// One compiled document: rendered many times without recompiling.
+#[wasm_bindgen]
+pub struct CompiledDoc {
+    engine: Arc<Engine>,
+    document: crate::Document,
+}
+
+#[wasm_bindgen]
+impl CompiledDoc {
+    /// Page count of the compiled document.
+    #[must_use]
+    pub fn page_count(&self) -> usize {
+        self.document.pages().len()
     }
 
-    /// Compile a source string and render one zero-based page to SVG text.
-    pub fn render_page(
-        &self,
-        source: &str,
-        inputs_json: &str,
-        page: usize,
-    ) -> Result<String, JsValue> {
-        let document = self.compile(source, inputs_json)?;
+    /// Render one zero-based page to SVG text.
+    pub fn svg_page(&self, page: usize) -> Result<String, JsValue> {
         self.engine
-            .svg_page(&document, page)
+            .svg_page(&self.document, page)
             .map_err(|fault| error(format!("SVG export failed: {fault}")))
     }
 
-    /// Compile a source string and export a deterministic PDF (epoch 0).
-    pub fn render_pdf(&self, source: &str, inputs_json: &str) -> Result<Vec<u8>, JsValue> {
-        let document = self.compile(source, inputs_json)?;
+    /// Export a deterministic PDF (epoch 0).
+    pub fn pdf(&self) -> Result<Vec<u8>, JsValue> {
         self.engine
-            .pdf(&document, 0)
+            .pdf(&self.document, 0)
             .map_err(|fault| error(format!("PDF export failed: {fault}")))
-    }
-
-    fn compile(&self, source: &str, inputs_json: &str) -> Result<crate::Document, JsValue> {
-        let inputs = parse_map(inputs_json)?;
-        self.engine
-            .compile(
-                CompileRequest::new("main.typ".to_owned())
-                    .source_file("main.typ", source.to_owned())
-                    .inputs(inputs),
-            )
-            .map(|output| output.document)
-            .map_err(|fault| error(format!("compilation failed: {fault}")))
     }
 }
