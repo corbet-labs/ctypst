@@ -7,6 +7,9 @@ Semantic Versioning.
 
 - Ship TypeScript declarations alongside sources so consumers typecheck
   without repository configuration, and publish the API to JSR.
+- Add Python bindings (`ctypst` on PyPI track): measurement, compilation,
+  SVG/PDF export, and queries as a native module with protocol
+  conformance tests.
 
 ## 0.3.1 - 2026-09-06
 
