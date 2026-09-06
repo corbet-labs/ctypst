@@ -3,6 +3,11 @@
 All notable changes to `ctypst` are documented here. The project follows
 Semantic Versioning.
 
+## Unreleased
+
+- Ship TypeScript declarations alongside sources so consumers typecheck
+  without repository configuration, and publish the API to JSR.
+
 ## 0.3.1 - 2026-09-06
 
 - Shrink the browser WebAssembly build by a quarter with size-tuned
