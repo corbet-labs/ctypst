@@ -286,12 +286,12 @@ jobs:
       - name: Publish the TypeScript API to JSR
         shell: bash
         working-directory: js/@corbet-labs/ctypst
-        env:
-          JSR_TOKEN: ${{ secrets.JSR_TOKEN }}
         run: |
-          if [ -z "$JSR_TOKEN" ]; then
-            echo "JSR_TOKEN unset, skipping JSR publish"
+          # OIDC trusted publishing first (no secret; the package links this
+          # repo). The npx wrapper ignores JSR_TOKEN env, so the fallback
+          # passes the token as a flag (GitHub masks secrets in logs).
+          if npx -y jsr@2.6.7 publish; then
             exit 0
           fi
-          export JSR_TOKEN
-          npx -y jsr@latest publish 2>&1 | tail -n 3
+          echo "OIDC publish failed, falling back to JSR_TOKEN"
+          npx -y jsr@2.6.7 publish --token "${{ secrets.JSR_TOKEN }}"
