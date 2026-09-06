@@ -117,9 +117,10 @@ jobs:
         working-directory: bindings/python
         run: |
           python -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install 'maturin==1.15.0' 'pytest==9.1.1'
-          "$RUNNER_TEMP/venv/bin/maturin" develop
-          "$RUNNER_TEMP/venv/bin/pytest" tests/ -q
+          . "$RUNNER_TEMP/venv/bin/activate"
+          pip install 'maturin==1.15.0' 'pytest==9.1.1'
+          maturin develop
+          pytest tests/ -q
 
   matrix:
     name: Cross-runtime measurement conformance
